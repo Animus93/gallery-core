@@ -22,15 +22,15 @@ export class AuthService {
     try {
       const result = await userRepo.save(user);
       return {
-        access_token: await this.jwtService.signAsync({ ...user }),
-        user: {
-          firstName: result.firstName,
-          lastName: result.lastName,
-          roles: result.roles,
-          isActive: result.isActive,
-          lastOnlineAt: result.lastOnlineAt,
-          id: result.id,
-        },
+        access_token: await this.jwtService.signAsync({ id: result.id }),
+        // user: {
+        //   firstName: result.firstName,
+        //   lastName: result.lastName,
+        //   roles: result.roles,
+        //   isActive: result.isActive,
+        //   lastOnlineAt: result.lastOnlineAt,
+        //   id: result.id,
+        // },
       };
     } catch (error) {
       if (error.code === '23505') {
@@ -52,15 +52,15 @@ export class AuthService {
     }
     delete result.password;
     return {
-      access_token: await this.jwtService.signAsync({ ...result }),
-      user: {
-        firstName: result.firstName,
-        lastName: result.lastName,
-        roles: result.roles,
-        isActive: result.isActive,
-        lastOnlineAt: result.lastOnlineAt,
-        id: result.id,
-      },
+      access_token: await this.jwtService.signAsync({ id: result.id }),
+      // user: {
+      //   firstName: result.firstName,
+      //   lastName: result.lastName,
+      //   roles: result.roles,
+      //   isActive: result.isActive,
+      //   lastOnlineAt: result.lastOnlineAt,
+      //   id: result.id,
+      // },
     };
   }
 }

@@ -38,9 +38,9 @@ export class AuthGuard implements CanActivate {
         message: 'Необходимо пройти авторизацию',
       });
     }
-    // await this.userService.updateUser(request.user.id, {
-    //   lastOnlineAt: new Date(),
-    // });
+    await this.userService.updateUser(request.user.id, {
+      lastOnlineAt: new Date(),
+    });
     return true;
   }
 }

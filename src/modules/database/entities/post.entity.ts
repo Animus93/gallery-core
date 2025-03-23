@@ -12,18 +12,30 @@ export class Post {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
-  image: string;
+  @Column({ nullable: true })
+  imgPath: string;
+
+  @Column({ nullable: true })
+  text: string;
 
   @Column()
   authorId: number;
 
-  @ManyToOne(() => User, (user) => user.posts) // Много записей Post к одному User
+  @ManyToOne(() => User, (user) => user.posts, {
+    eager: true,
+  })
   @JoinColumn({ name: 'authorId' })
   author: User;
 
   @Column({
     nullable: true,
+    default: true,
   })
   isActive: boolean;
+
+  @Column({
+    type: 'timestamp',
+    default: () => 'CURRENT_TIMESTAMP',
+  })
+  createdAt: Date;
 }

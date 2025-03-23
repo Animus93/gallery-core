@@ -1,7 +1,15 @@
-import { HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { User } from '../database/entities/user.entity';
+import { isFileExtensionSafe, removeFile } from '../../helpers/image-storage';
+import * as path from 'node:path';
+import * as process from 'node:process';
 
 @Injectable()
 export class UserService {
@@ -18,6 +26,7 @@ export class UserService {
     const scopeArray = scope.split(',');
     const getLogin = scopeArray.indexOf('login') !== -1;
     const getPassword = scopeArray.indexOf('password') !== -1;
+    const getPosts = scopeArray.indexOf('posts') !== -1;
     const { login, id } = data;
     const whereCondition: { login?: string; id?: number } = {};
     if (login) {
@@ -30,13 +39,28 @@ export class UserService {
         code: HttpStatus.BAD_REQUEST,
       });
     }
-    const result = await this.dataSource
+    const queryBuilder = this.dataSource
       .getRepository(User)
       .createQueryBuilder('user')
-      .addSelect(getPassword ? 'user.password' : null)
-      .addSelect(getLogin ? 'user.login' : null)
-      .where(whereCondition)
-      .getOne();
+      .where(whereCondition);
+
+    // Добавляем выборку пароля, если нужно
+    if (getPassword) {
+      queryBuilder.addSelect('user.password');
+    }
+
+    // Добавляем выборку логина, если нужно
+    if (getLogin) {
+      queryBuilder.addSelect('user.login');
+    }
+
+    // Добавляем JOIN для постов, если нужно
+    if (getPosts) {
+      queryBuilder.leftJoinAndSelect('user.posts', 'post');
+    }
+
+    const result = await queryBuilder.getOne();
+
     if (result) {
       return result;
     } else {
@@ -57,22 +81,55 @@ export class UserService {
     }
   }
 
-  async updateUser(id: number, updateData: Partial<User>) {
+  async updateUser(
+    id: number,
+    updateData: Partial<User>,
+    file?: Express.Multer.File,
+  ) {
+    if (file) {
+      const fileName = file.filename;
+      if (!fileName) {
+        throw new BadRequestException({
+          message:
+            'Неподдерживаемый формат файла. Разрешены только JPEG, PNG и JPG.',
+        });
+      }
+      const imagesFolderPath = path.join(process.cwd(), 'uploads/avatars');
+      const fullImagePath = path.join(imagesFolderPath + '/' + file.filename);
+      const isFileSafe = await isFileExtensionSafe(fullImagePath);
+      if (isFileSafe) {
+        // updateData.imgPath = file.filename;
+        updateData.imgPath = file.filename;
+      } else {
+        removeFile(fullImagePath);
+        throw new BadRequestException({
+          message: 'Неверный формат файла используйте PNG JPG JPEG',
+        });
+      }
+    }
     delete updateData.id;
     const result = await this.dataSource
       .createQueryBuilder()
       .update(User, updateData)
       .where({ id })
       .updateEntity(true)
-      .returning(['id', 'firstName', 'lastName', 'roles', 'isActive'])
+      .returning([
+        'id',
+        'firstName',
+        'lastName',
+        'roles',
+        'isActive',
+        'imgPath',
+        'posts',
+      ])
       .execute();
-    const arr = result.raw as Array<any>;
-    if (!arr.length) {
+    const raw = result.raw as Array<any>;
+    if (!raw.length) {
       throw new NotFoundException({
         message: `Пользователь не найден`,
         code: HttpStatus.NOT_FOUND,
       });
     }
-    return arr[0];
+    return raw[0];
   }
 }

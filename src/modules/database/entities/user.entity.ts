@@ -17,6 +17,9 @@ export class User {
   @Column()
   firstName: string;
 
+  @Column({ nullable: true })
+  imgPath: string;
+
   @Column({
     nullable: true,
   })
@@ -37,6 +40,7 @@ export class User {
 
   @Column({
     nullable: true,
+    default: true,
   })
   isActive: boolean;
 
