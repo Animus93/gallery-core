@@ -56,6 +56,12 @@ export class PostService {
   }
 
   async deletePost(id: number): Promise<void> {
+    const post = await this.dataSource.getRepository(Post).findOneBy({ id });
+    if (post.imgPath) {
+      const imagesFolderPath = path.join(process.cwd(), 'uploads/posts');
+      const fullImagePath = path.join(imagesFolderPath + '/' + post.imgPath);
+      removeFile(fullImagePath);
+    }
     const result = await this.dataSource.getRepository(Post).delete(id);
     if (result.affected === 0) {
       throw new NotFoundException({
