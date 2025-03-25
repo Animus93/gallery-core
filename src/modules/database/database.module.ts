@@ -19,10 +19,10 @@ import { DataSource } from 'typeorm';
           password: configService.get('DB_PASSWORD'),
           database: configService.get('DB_NAME'),
           entities: [path.resolve(__dirname, '..') + '/**/*.entity{.ts,.js}'],
-          synchronize: true,
+          synchronize: false,
         });
         await dataSource.initialize();
-        // await dataSource.runMigrations()
+        await dataSource.runMigrations();
         return dataSource.options;
       },
     }),

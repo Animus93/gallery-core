@@ -14,6 +14,5 @@ export class AuthController {
   @Post('singUp')
   create(@Body() data: User) {
     return this.authService.signUp(data);
-    // return instanceToPlain(user);
   }
 }
